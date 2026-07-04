@@ -1,9 +1,9 @@
 import { createContext, useState, type ReactNode } from "react";
 
-//יצירת הקונטקסט
+// Create context
 const ExampleContext = createContext<any>(null);
 
-//יצירת הפרוביידר
+// Create provider
 function ExampleProvider({ children }: { children: ReactNode }) {
   const [something, setSomething] = useState(10);
 
@@ -14,8 +14,5 @@ function ExampleProvider({ children }: { children: ReactNode }) {
   );
 }
 
-//custom hook for using the context
-//
-//
-//
+// custom hook for using the context
 export { ExampleProvider, ExampleContext };

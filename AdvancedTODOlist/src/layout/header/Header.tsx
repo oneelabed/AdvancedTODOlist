@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import NavItem from "../../router/NavItem";
+import TaskIcon from '@mui/icons-material/Task';
 import ROUTES from "../../router/routes";
 import { useNavigate } from "react-router-dom";
 import {
@@ -38,13 +39,13 @@ function Header() {
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" component="div">
-          My Logo
+          <TaskIcon sx={{ fontSize: "3rem" }} />
         </Typography>
         <Box sx={{ display: "flex" }}>
           <Box sx={{ display: { xs: "none", md: "block" } }}>
             <NavItem to={ROUTES.HOME} label="Home" />
-            <NavItem to={ROUTES.ABOUT} label="About" />
             <NavItem to={ROUTES.CONTACT} label="Contact" />
+            <NavItem to={ROUTES.ABOUT} label="About" />
           </Box>
           {user ? (
             <>

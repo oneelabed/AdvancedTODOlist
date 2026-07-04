@@ -19,6 +19,7 @@ import { addUser ,getUserById} from "../services/usersDataServiceFireBase";
 
 const UserContext = createContext<{
   user: User | null;
+  loading: boolean;
   signup: (userData: any) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -26,12 +27,25 @@ const UserContext = createContext<{
 
 function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const auth = getAuth(app);
   const signup = useCallback(
-    async ({email, password,...userData}: {email: string; password: string; userData:any}) => {
-     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-     // Add additional user data to Firestore
-     await addUser({ id: userCredential.user.uid,email: userCredential.user.email||"",...userData } as any);
+    async ({
+      email,
+      password,
+      displayName,
+    }: {
+      email: string;
+      password: string;
+      displayName: string;
+    }) => {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Add additional user data to Firestore
+      await addUser({
+        id: userCredential.user.uid,
+        email: userCredential.user.email || "",
+        displayName,
+      });
     },
     [auth],
   );
@@ -47,26 +61,31 @@ function UserProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
       if(currentUser) {
-      const userData = await getUserById(currentUser.uid);
-      if(userData) {
-        setUser(userData);
+        const userData = await getUserById(currentUser.uid);
+        if(userData) {
+          setUser(userData);
+        }
+        else {
+          setUser({
+            id: currentUser.uid,
+            email: currentUser.email || "",
+            displayName: currentUser.displayName || currentUser.email || "User",
+          } as any);
+        }
       }
-      else {
-      setUser(currentUser as any);
+      else{
+        setUser(null)
       }
-    }
-    else{
-      setUser(null)
-    }
-  });
+      setLoading(false);
+    });
 
     return unsubscribe;
   }, []);
-console.log(user);
 
   return (
-    <UserContext.Provider value={{ user, signup, login, logout }}>
+    <UserContext.Provider value={{ user, loading, signup, login, logout }}>
       {children}
     </UserContext.Provider>
   );

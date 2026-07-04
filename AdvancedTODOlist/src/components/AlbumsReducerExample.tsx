@@ -2,7 +2,6 @@ import { useReducer } from "react";
 import { useEffect } from "react";
 import { Alert, Box, CircularProgress, Typography } from "@mui/material";
 
-
 function albumReducer (state: {albums:any[],isLoading:boolean,error:string | null}, action: { type: string,payload?: any }) {
   switch (action.type) {
     case 'FETCH_START':
@@ -16,8 +15,8 @@ function albumReducer (state: {albums:any[],isLoading:boolean,error:string | nul
   }
 }
 
-//יש לייבא את המידע על האלבומים ולהציגו על המסך
-//שימו לב - יש לנהל גם סטייט של שגיאה וגם סטייט של טעינה שיתעדכנו בהתאם למצב
+// Fetch and display albums on the screen
+// Handle loading and error states accordingly
 
 function AlbumsReducerExample() {
   const [{ albums, isLoading, error }, dispatch] = useReducer(albumReducer, {albums: [], isLoading: false, error: null});
@@ -26,21 +25,22 @@ function AlbumsReducerExample() {
   try {
     dispatch({ type: 'FETCH_START' });
     const response = await fetch("https://jsonplaceholder.typicode.com/albums");
-    // בדיקה אם השרת החזיר תגובה תקינה (סטטוס 200-299)
+    // Check if server returned ok response
     if (!response.ok) {
-      throw new Error("נכשלנו בטעינת האלבומים מהשרת");
+      throw new Error("Failed to load albums from the server");
     }
     const data: any[] = await response.json();
     dispatch({ type: 'FETCH_SUCCESS', payload: data });
   } catch (err: any) {
-    // תפיסת שגיאות ועדכון הסטייט
-    dispatch({ type: 'FETCH_ERROR', payload: err.message || "אירעה שגיאה בלתי צפויה" });
+    // Catch errors and update state
+    dispatch({ type: 'FETCH_ERROR', payload: err.message || "An unexpected error occurred" });
   } 
 };
 useEffect(() => {
   fetchAlbums();
 }, []);
-// 5. רינדור מותנה על בסיס מצב הסטייט
+
+// Conditional rendering based on state
 if (isLoading) {
   return (
     <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -58,9 +58,9 @@ if (error) {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" sx={{ mb: 2 }}>
-        רשימת אלבומים
+        Album List
       </Typography>
-      {/* 6. רינדור רשימה באמצעות map עם שימוש ב-key ייחודי */}
+      {/* Render list using map with unique key */}
       <Box component="ul" sx={{ pl: 2 }}>
         {albums.map((album:any) => (
           <Box component="li" key={album.id} sx={{ mb: 1 }}>

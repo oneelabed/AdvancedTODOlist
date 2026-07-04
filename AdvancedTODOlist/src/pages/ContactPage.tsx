@@ -1,14 +1,15 @@
 import { Typography, Box, TextField, Button, Paper } from "@mui/material";
-// שים לב לייבוא - משתמשים ב-Grid2
 import { Grid } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { useState } from "react";
+
 const ContactPage = () => {
   const [status, setStatus] = useState("");
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    setStatus("ההודעה נשלחה בהצלחה!");
+    setStatus("Message sent successfully!");
   };
+
   return (
     <Box sx={{ maxWidth: "600px", mx: "auto", mt: 4 }}>
       <Typography
@@ -17,18 +18,18 @@ const ContactPage = () => {
         gutterBottom
         sx={{ mb: 4, fontWeight: 500 }}
       >
-        צרו קשר
+        Contact Us
       </Typography>
       <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid size={12}>
-              <TextField fullWidth label="שם מלא" variant="outlined" required />
+              <TextField fullWidth label="Full Name" variant="outlined" required />
             </Grid>
             <Grid size={12}>
               <TextField
                 fullWidth
-                label="אימייל"
+                label="Email"
                 type="email"
                 variant="outlined"
                 required
@@ -37,7 +38,7 @@ const ContactPage = () => {
             <Grid size={12}>
               <TextField
                 fullWidth
-                label="הודעה"
+                label="Message"
                 multiline
                 rows={4}
                 variant="outlined"
@@ -50,10 +51,10 @@ const ContactPage = () => {
                 variant="contained"
                 size="large"
                 type="submit"
-                endIcon={<SendIcon sx={{ transform: "rotate(180deg)" }} />}
+                endIcon={<SendIcon />}
                 sx={{ py: 1.5, fontSize: "1.1rem" }}
               >
-                שליחת הודעה
+                Send Message
               </Button>
             </Grid>
             {status && (
@@ -69,4 +70,5 @@ const ContactPage = () => {
     </Box>
   );
 };
+
 export default ContactPage;

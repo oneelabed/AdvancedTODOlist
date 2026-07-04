@@ -14,7 +14,8 @@ interface KanbanBoardProps {
   onDeleteColumn: (id: string) => void;
   handleEditTask: (data: Task) => void;
   handleDeleteTask: (id: string) => void;
-  updateLikes: (id: string, action: "inc" | "dec") => void;
+  toggleSaveTask: (id: string) => void;
+  handleAddNewTask: (task: Omit<Task, "id" | "savedBy">) => void;
 }
 
 function KanbanBoard({
@@ -26,7 +27,8 @@ function KanbanBoard({
   onDeleteColumn,
   handleEditTask,
   handleDeleteTask,
-  updateLikes,
+  toggleSaveTask,
+  handleAddNewTask,
 }: KanbanBoardProps) {
   return (
     <DragDropProvider
@@ -60,13 +62,14 @@ function KanbanBoard({
           <Column
             key={column.id}
             column={column}
-            tasks={tasks.filter((t) => t.column === column.id)}
+            tasks={tasks.filter((t) => t.columnId === column.id)}
             columns={columns}
             onEditColumn={onEditColumn}
             onDeleteColumn={onDeleteColumn}
             handleEditTask={handleEditTask}
             handleDeleteTask={handleDeleteTask}
-            updateLikes={updateLikes}
+            toggleSaveTask={toggleSaveTask}
+            handleAddNewTask={handleAddNewTask}
           />
         ))}
       </Box>

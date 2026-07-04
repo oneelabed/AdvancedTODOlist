@@ -6,8 +6,8 @@ import {
   getColumns,
   updateColumn,
   deleteColumn,
-} from "../services/columnsDataServiceFireBase"; // ודא שהקובץ קיים והנתיב תקין
-import { getTasks } from "../services/tasksDataServiceFireBase"; // הקריאה החדשה למשימות
+} from "../services/columnsDataServiceFireBase";
+import { getTasks } from "../services/tasksDataServiceFireBase";
 
 function useColumns() {
   const [columns, setColumns] = useState<Column[]>([]);
@@ -19,31 +19,29 @@ function useColumns() {
   };
 
   // READ
-  const handleGetColumns = useCallback(async () => {
+  const handleGetColumns = useCallback(async (boardId?: string) => {
     try {
-      const savedColumns = await getColumns();
+      const savedColumns = await getColumns(boardId);
       setColumns(savedColumns);
     } catch {
-      raiseSnack("error", "התרחשה שגיאה בייבוא הנתונים");
+      raiseSnack("error", "An error occurred while importing columns");
     }
   }, [raiseSnack]);
 
   // CREATE
   const handleAddColumn = useCallback(
-    async (column: Pick<Column, "name">) => {
+    async (column: Omit<Column, "id">) => {
       try {
-        // המתנה ליצירת העמודה וקבלת ה-ID מפיירבייס
         const newId = await addColumn(column);
-
         const newColumn: Column = {
           ...column,
           id: newId,
         };
 
         setColumns((prev) => [...prev, newColumn]);
-        raiseSnack("success", "עמודה חדשה התווספה בהצלחה");
+        raiseSnack("success", "New column added successfully");
       } catch (error) {
-        raiseSnack("error", "התרחשה שגיאה ביצירת העמודה");
+        raiseSnack("error", "An error occurred while creating the column");
       }
     },
     [raiseSnack],
@@ -59,9 +57,9 @@ function useColumns() {
         setColumns((prev) =>
           prev.map((c) => (c.id === column.id ? column : c)),
         );
-        raiseSnack("success", "עמודה נערכה בהצלחה");
+        raiseSnack("success", "Column edited successfully");
       } catch (error) {
-        raiseSnack("error", "שגיאה בעריכת העמודה");
+        raiseSnack("error", "Error editing column");
       }
     },
     [raiseSnack],
@@ -71,18 +69,17 @@ function useColumns() {
   const handleDeleteColumn = useCallback(
     async (id: string) => {
       try {
-        // משיכת המשימות מפיירבייס כדי לבדוק אם העמודה בשימוש
-        const tasks = await getTasks();
-        if (tasks.some((t) => t.column === id)) {
-          raiseSnack("warning", "שים לב! לא ניתן למחוק עמודה שמכילה משימות");
+        const tasks = await getTasks([id]);
+        if (tasks.some((t) => t.columnId === id)) {
+          raiseSnack("warning", "Attention! Cannot delete a column that contains tasks");
           return;
         }
 
         await deleteColumn(id);
         setColumns((prev) => prev.filter((c) => c.id !== id));
-        raiseSnack("success", "עמודה נמחקה בהצלחה");
+        raiseSnack("success", "Column deleted successfully");
       } catch (error) {
-        raiseSnack("error", "שגיאה במחיקת העמודה");
+        raiseSnack("error", "Error deleting column");
       }
     },
     [raiseSnack],

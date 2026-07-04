@@ -11,6 +11,9 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import type { Column } from "../types/Column";
 import type { Task } from "../types/Task";
+import type { User } from "../types/User";
+import { getUsers } from "../services/usersDataServiceFireBase";
+import { useState, useEffect } from "react";
 
 interface TaskFormDialogProps {
   open: boolean;
@@ -27,22 +30,26 @@ function TaskFormDialog({
   columns,
   handleSave,
 }: TaskFormDialogProps) {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      getUsers().then(setUsers).catch(console.error);
+    }
+  }, [open]);
+
   const { control, handleSubmit, reset } = useForm<Task>({
     defaultValues: initialValues ?? {
       title: "",
       description: "",
-      status: "pending",
-      dueDate: new Date(),
-      priority: "medium",
-      column: columns[0]?.id ?? "",
+      columnId: columns[0]?.id ?? "",
+      assigneeId: "",
+      savedBy: [],
     },
   });
 
   const onSubmit = (data: Task) => {
-    // הדפסת האובייקט לקונסול כפי שביקשת
     handleSave(data);
-
-    // איפוס הטופס וסגירה
     reset();
     onClose();
   };
@@ -50,20 +57,20 @@ function TaskFormDialog({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
-        {initialValues ? "עריכת משימה" : "הוספת משימה חדשה"}
+        {initialValues ? "Edit Task" : "Add New Task"}
       </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent dividers>
           <Stack spacing={3}>
-            {/* כותרת המשימה */}
+            {/* Task Title */}
             <Controller
               name="title"
               control={control}
-              rules={{ required: "זהו שדה חובה" }}
+              rules={{ required: "This field is required" }}
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
-                  label="כותרת"
+                  label="Title"
                   fullWidth
                   error={!!error}
                   helperText={error?.message}
@@ -71,14 +78,14 @@ function TaskFormDialog({
               )}
             />
 
-            {/* תיאור המשימה */}
+            {/* Task Description */}
             <Controller
               name="description"
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="תיאור"
+                  label="Description"
                   fullWidth
                   multiline
                   rows={3}
@@ -86,73 +93,52 @@ function TaskFormDialog({
               )}
             />
 
+            {/* Column */}
             <Controller
-              name="column"
+              name="columnId"
               control={control}
-              rules={{ required: "יש לבחור עמודה" }}
+              rules={{ required: "Please select a column" }}
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
                   select
-                  label="עמודה"
+                  label="Column"
                   fullWidth
                   error={!!error}
                   helperText={error?.message}
                 >
                   {columns.map((col) => (
                     <MenuItem key={col.id} value={col.id}>
-                      {col.name}
+                      {col.title}
                     </MenuItem>
                   ))}
                 </TextField>
               )}
             />
 
-            <Stack direction="row" spacing={2}>
-              {/* סטטוס */}
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} select label="סטטוס" fullWidth>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="in-progress">In Progress</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                  </TextField>
-                )}
-              />
-
-              {/* עדיפות */}
-              <Controller
-                name="priority"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} select label="עדיפות" fullWidth>
-                    <MenuItem value="low">Low</MenuItem>
-                    <MenuItem value="medium">Medium</MenuItem>
-                    <MenuItem value="high">High</MenuItem>
-                  </TextField>
-                )}
-              />
-            </Stack>
-
-            {/* תאריך יעד - שימוש ב-Native HTML Date input לצורך הפשטות */}
+            {/* Assignee */}
             <Controller
-              name="dueDate"
+              name="assigneeId"
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="תאריך יעד"
-                  type="date"
+                  select
+                  label="Assignee"
                   fullWidth
-                  onChange={(e) => field.onChange(new Date(e.target.value))}
-                  value={
-                    field.value instanceof Date
-                      ? field.value.toISOString().split("T")[0]
-                      : field.value
-                  }
-                />
+                >
+                  <MenuItem value="">Unassigned</MenuItem>
+                  {users.map((u) => (
+                    <MenuItem key={u.id} value={u.id}>
+                      {u.displayName || u.email}
+                    </MenuItem>
+                  ))}
+                  {field.value && !users.some((u) => u.id === field.value) && (
+                    <MenuItem value={field.value} style={{ display: "none" }}>
+                      Loading...
+                    </MenuItem>
+                  )}
+                </TextField>
               )}
             />
           </Stack>
@@ -160,10 +146,10 @@ function TaskFormDialog({
 
         <DialogActions>
           <Button onClick={onClose} color="inherit">
-            ביטול
+            Cancel
           </Button>
           <Button type="submit" variant="contained" color="primary">
-            {initialValues ? "עריכה" : "צור משימה"}
+            {initialValues ? "Save" : "Create Task"}
           </Button>
         </DialogActions>
       </form>

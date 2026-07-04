@@ -4,9 +4,13 @@ import {
   CardActionArea,
   CardActions,
   CardContent,
-  Chip,
   IconButton,
   Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import type { Column } from "../types/Column";
@@ -14,43 +18,53 @@ import type { Task } from "../types/Task";
 import ROUTES from "../router/routes";
 import EditIcon from "@mui/icons-material/Edit";
 import TaskFormDialog from "./TaskFormDialog";
-import { useState, memo, useContext } from "react";
+import { useState, memo, useEffect } from "react";
 import ClearIcon from "@mui/icons-material/Clear";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import ThumbDownIcon from "@mui/icons-material/ThumbDown";
-import {
-  ProjectThemeContext,
-  type ThemeContextType,
-} from "../providers/ProjectThemeProvider";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { useUser } from "../providers/UserProvider";
+import { getUserById } from "../services/usersDataServiceFireBase";
+import type { User } from "../types/User";
+
 interface TaskProps {
   task: Task;
   columns: Column[];
   handleEditTask: (data: Task) => void;
   handleDeleteTask: (id: string) => void;
-  updateLikes: (id: string, action: "inc" | "dec") => void;
+  toggleSaveTask: (id: string) => void;
 }
+
 function TaskCard({
   task,
   columns,
   handleEditTask,
   handleDeleteTask,
-  updateLikes,
+  toggleSaveTask,
 }: TaskProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [assignee, setAssignee] = useState<User | null>(null);
   const navigate = useNavigate();
-  const { isDark } = useContext(ProjectThemeContext) as ThemeContextType;
-  const {user}=useUser()
+  const { user } = useUser();
 
+  useEffect(() => {
+    if (task.assigneeId) {
+      getUserById(task.assigneeId).then(setAssignee).catch(console.error);
+    } else {
+      setAssignee(null);
+    }
+  }, [task.assigneeId]);
+
+  const isSaved = user && task.savedBy?.includes(user.id);
 
   return (
     <Card
       sx={{
-        minHeight: 200,
+        minHeight: 180,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         bgcolor: "background.paper",
+        position: "relative",
       }}
       elevation={3}
     >
@@ -67,44 +81,50 @@ function TaskCard({
             {task.description}
           </Typography>
         </CardContent>
-        <Box sx={{ p: 2, pt: 0 }}>
-          <Chip
-            label={task.status}
-            color={task.status === "completed" ? "success" : "warning"}
-            variant="filled"
-            sx={{ textTransform: "capitalize" }}
-          />
+        <Box sx={{ px: 2, pb: 1, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+          {assignee && (
+            <Tooltip title={`Assignee: ${assignee.displayName || assignee.email}`}>
+              <Avatar sx={{ width: 28, height: 28, fontSize: "0.8rem", bgcolor: "secondary.main" }}>
+                {(assignee.displayName || assignee.email).charAt(0).toUpperCase()}
+              </Avatar>
+            </Tooltip>
+          )}
         </Box>
       </CardActionArea>
-     {user&& <CardActions>
-        <IconButton onClick={() => setIsOpen(true)} aria-label="Edit task">
-          <EditIcon />
-        </IconButton>
-        <IconButton>
-          <ClearIcon
-            sx={{ color: "red" }}
-            onClick={() => handleDeleteTask(task.id)}
-            aria-label="Delete task"
-          />
-        </IconButton>
-        <IconButton>
-          <ThumbUpIcon
-            sx={{ color: isDark ? "#90caf9" : "#1976d2" }}
-            onClick={() => updateLikes(task.id, "inc")}
-            aria-label="Like"
-          />
-        </IconButton>.        <Typography>{task.likes.length}</Typography>
+      {user && (
+        <CardActions sx={{ borderTop: 1, borderColor: "divider", py: 0.5 }}>
+          <IconButton onClick={() => setIsOpen(true)} size="small" aria-label="Edit task">
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={() => handleDeleteTask(task.id)} aria-label="Delete task">
+            <ClearIcon fontSize="small" sx={{ color: "error.main" }} />
+          </IconButton>
+          <IconButton size="small" onClick={() => toggleSaveTask(task.id)} aria-label="Save task">
+            {isSaved ? (
+              <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
+            ) : (
+              <StarBorderIcon fontSize="small" />
+            )}
+          </IconButton>
 
-        <IconButton>
-          <ThumbDownIcon
-            sx={{ color: isDark ? "#f48fb1" : "#d32f2f" }}
-            onClick={() => updateLikes(task.id, "dec")}
-            aria-label="DisLike"
-          />
-        </IconButton>
-                <Typography>{task.dislikes.length}</Typography>
-
-      </CardActions>}
+          {/* Quick select dropdown for moving between columns */}
+          <FormControl size="small" sx={{ minWidth: 90, ml: "auto" }}>
+            <Select
+              value={task.columnId}
+              onChange={(e) => handleEditTask({ ...task, columnId: e.target.value })}
+              variant="standard"
+              disableUnderline
+              sx={{ fontSize: "0.75rem" }}
+            >
+              {columns.map((col) => (
+                <MenuItem key={col.id} value={col.id} sx={{ fontSize: "0.75rem" }}>
+                  {col.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </CardActions>
+      )}
       {isOpen && (
         <TaskFormDialog
           open={isOpen}
@@ -117,4 +137,5 @@ function TaskCard({
     </Card>
   );
 }
+
 export default memo(TaskCard);

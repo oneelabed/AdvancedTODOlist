@@ -6,13 +6,16 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  query,
+  where,
 } from "firebase/firestore";
-import app from "../config/firebase"; // ודא שהנתיב תואם למיקום הקובץ שלך
+import app from "../config/firebase";
 import type { Column } from "../types/Column";
-// אתחול החיבור למסד הנתונים
+
 const db = getFirestore(app);
 const columnsCollectionName = "columns";
 const columnsCollection = collection(db, columnsCollectionName);
+
 export const addColumn = async (
   column: Omit<Column, "id">,
 ): Promise<string> => {
@@ -25,9 +28,13 @@ export const addColumn = async (
   }
 };
 
-export const getColumns = async (): Promise<Column[]> => {
+export const getColumns = async (boardId?: string): Promise<Column[]> => {
   try {
-    const querySnapshot = await getDocs(columnsCollection);
+    let q = query(columnsCollection);
+    if (boardId) {
+      q = query(columnsCollection, where("boardId", "==", boardId));
+    }
+    const querySnapshot = await getDocs(q);
     const columns: Column[] = querySnapshot.docs.map(
       (doc) =>
         ({
@@ -41,6 +48,7 @@ export const getColumns = async (): Promise<Column[]> => {
     throw error;
   }
 };
+
 export const updateColumn = async (
   id: string,
   updatedData: Partial<Column>,
@@ -53,6 +61,7 @@ export const updateColumn = async (
     throw error;
   }
 };
+
 export const deleteColumn = async (id: string): Promise<void> => {
   try {
     const columnDocRef = doc(db, columnsCollectionName, id);

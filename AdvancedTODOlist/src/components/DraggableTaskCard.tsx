@@ -11,7 +11,7 @@ interface DraggableTaskCardProps {
   columns: Column[];
   handleEditTask: (data: Task) => void;
   handleDeleteTask: (id: string) => void;
-  updateLikes: (id: string, action: "inc" | "dec") => void;
+  toggleSaveTask: (id: string) => void;
 }
 
 function DraggableTaskCard({
@@ -19,11 +19,11 @@ function DraggableTaskCard({
   columns,
   handleEditTask,
   handleDeleteTask,
-  updateLikes,
+  toggleSaveTask,
 }: DraggableTaskCardProps) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: task.id,
-    data: { columnId: task.column },
+    data: { columnId: task.columnId },
   });
 
   return (
@@ -39,7 +39,7 @@ function DraggableTaskCard({
       <IconButton
         ref={handleRef}
         size="small"
-        aria-label="גרור משימה"
+        aria-label="drag task"
         sx={{ mt: 1, cursor: "grab" }}
       >
         <DragIndicatorIcon />
@@ -50,7 +50,7 @@ function DraggableTaskCard({
           columns={columns}
           handleEditTask={handleEditTask}
           handleDeleteTask={handleDeleteTask}
-          updateLikes={updateLikes}
+          toggleSaveTask={toggleSaveTask}
         />
       </Box>
     </Box>

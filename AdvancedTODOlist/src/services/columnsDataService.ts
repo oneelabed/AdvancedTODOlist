@@ -12,7 +12,7 @@ const getColumns = () => {
     }
   } catch (e) {
     console.log("saved columns are not valid Json");
-    throw new Error("שגיאה בייבוא הנתונים");
+    throw new Error("Error importing data");
   }
 };
 

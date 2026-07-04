@@ -2,8 +2,6 @@ import { getFirestore, collection, setDoc, getDocs, getDoc, doc } from "firebase
 import app from "../config/firebase";
 import {type User } from "../types/User";
 
-
-
 const db = getFirestore(app);
 const usersCollection = collection(db, "users");
 
@@ -39,13 +37,13 @@ export async function getUserById(id: string): Promise<User | null> {
 
 export async function addUser(user: User): Promise<string> {
   try {
-    // יצירת רפרנס למסמך בקולקשן users עם ה-ID של המשתמש
+    // Create doc reference in users collection with user ID
     const userDocRef = doc(usersCollection, user.id);
     
-    // שמירת המסמך ב-Firestore
+    // Save document in Firestore
     await setDoc(userDocRef, user);
     
-    // החזרת ה-ID כפי שהפונקציה המקורית עשתה
+    // Return the ID
     return user.id;
   } catch (error) {
     console.error("Error adding user:", error);

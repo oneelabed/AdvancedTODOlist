@@ -6,62 +6,56 @@ import {
   getTasks,
   updateTask,
   deleteTask,
-  getTaskById,
-} from "../services/tasksDataServiceFireBase"; // ודא שהנתיב תקין
+} from "../services/tasksDataServiceFireBase";
 import { useUser } from "../providers/UserProvider";
 
 function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading,setIsLoading] = useState(true);
-  const [error,setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { raiseSnack } = useContext(SnackContext) as any;
-  const {user}=useUser()
+  const { user } = useUser();
 
   // READ
-  const handleGetTasks = useCallback(async () => {
+  const handleGetTasks = useCallback(async (columnIds?: string[]) => {
     setIsLoading(true);
     try {
-      const savedTasks = await getTasks();
+      const savedTasks = await getTasks(columnIds);
       setTasks(savedTasks);
     } catch (e) {
-      raiseSnack("error", "התרחשה שגיאה בייבוא הנתונים");
+      raiseSnack("error", "An error occurred while importing tasks");
       setError("Error fetching tasks");
-    }
-    finally {     
-     setIsLoading(false);
-
+    } finally {
+      setIsLoading(false);
     }
   }, [raiseSnack]);
 
   // CREATE
   const handleAddNewTask = useCallback(
-    async (task: Omit<Task, "id">) => {
-      if (!task.column) {
-        raiseSnack("error", "יש לבחור עמודה למשימה");
+    async (task: Omit<Task, "id" | "savedBy">) => {
+      if (!task.columnId) {
+        raiseSnack("error", "Please select a column for the task");
         return;
       }
 
+      const { id, ...taskWithoutId } = task as any;
       const newTaskData = {
-        ...task,
-        likes: [],
-        dislikes: [],
-        userId: user?.id ?? "unknown", // הוספת userId
+        ...taskWithoutId,
+        savedBy: [],
       };
 
       try {
-        // המתנה ליצירת המשימה וקבלת ה-ID מפיירבייס
-        const newId = await addTask(newTaskData);
-
+        const newId = await addTask(newTaskData as any);
         const newTask: Task = {
           ...newTaskData,
           id: newId,
-        };
+        } as Task;
 
         setTasks((prev) => [...prev, newTask]);
-        raiseSnack("success", "משימה חדשה התווספה בהצלחה");
+        raiseSnack("success", "New task added successfully");
       } catch (error) {
-        raiseSnack("error", "התרחשה שגיאה ביצירת המשימה");
+        raiseSnack("error", "An error occurred while creating the task");
       }
     },
     [raiseSnack],
@@ -72,17 +66,14 @@ function useTasks() {
     (taskId: string, columnId: string) => {
       setTasks((prev) => {
         const task = prev.find((t) => t.id === taskId);
-        if (!task || task.column === columnId) return prev;
+        if (!task || task.columnId === columnId) return prev;
 
-        // עדכון פיירבייס ברקע
-        updateTask(taskId, { column: columnId }).catch(() => {
-          raiseSnack("error", "שגיאה בשמירת מיקום המשימה");
-          // במקרה של שגיאה אפשר לקרוא ל-handleGetTasks כדי לסנכרן חזרה מהשרת
+        updateTask(taskId, { columnId }).catch(() => {
+          raiseSnack("error", "Error saving task column location");
         });
 
-        // עדכון UI מידי
         return prev.map((t) =>
-          t.id === taskId ? { ...t, column: columnId } : t,
+          t.id === taskId ? { ...t, columnId } : t,
         );
       });
     },
@@ -97,9 +88,9 @@ function useTasks() {
       try {
         await updateTask(task.id, task);
         setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)));
-        raiseSnack("success", "משימה נערכה בהצלחה");
+        raiseSnack("success", "Task edited successfully");
       } catch (error) {
-        raiseSnack("error", "שגיאה בעריכת המשימה");
+        raiseSnack("error", "Error editing task");
       }
     },
     [raiseSnack],
@@ -108,48 +99,44 @@ function useTasks() {
   // DELETE
   const handleDeleteTask = useCallback(
     async (id: string) => {
-      if (confirm("האם את/ה בטוח/ה שברצונך למחוק את המשימה?")) {
+      if (confirm("Are you sure you want to delete this task?")) {
         try {
           await deleteTask(id);
           setTasks((prev) => prev.filter((t) => t.id !== id));
-          raiseSnack("success", "המשימה נמחקה בהצלחה");
+          raiseSnack("success", "Task deleted successfully");
         } catch (error) {
-          raiseSnack("error", "שגיאה במחיקת המשימה");
+          raiseSnack("error", "Error deleting task");
         }
       }
     },
     [raiseSnack],
   );
 
-  // UPDATE - Likes (Optimistic Update)
-  const updateLikes = useCallback(
-    async (id: string, action: "inc" | "dec") => {
+  // TOGGLE SAVE TASK (Optimistic Update)
+  const toggleSaveTask = useCallback(
+    async (id: string) => {
+      if (!user) {
+        raiseSnack("warning", "Please log in to save tasks");
+        return;
+      }
 
-      const updatedTask = await getTaskById(id);
       setTasks((prev) => {
-        const task = updatedTask
+        const task = prev.find((t) => t.id === id);
         if (!task) return prev;
-        const field = action==="inc" ? "likes" : "dislikes";
-        let newLikes = [...task[field]];
-        if(user){
-        let isTheUserAlreadyExists = newLikes.includes(user?.id);
-        if (!isTheUserAlreadyExists) {
-          newLikes.push(user?.id);
-        } else {
-          newLikes = newLikes.filter((likeId) => likeId !== user?.id);
-        }
-        }
-        // עדכון פיירבייס ברקע
-        updateTask(id, { [field]: newLikes }).catch(() => {
-          raiseSnack("error", "שגיאה בעדכון הלייקים");
+
+        const isSaved = task.savedBy.includes(user.id);
+        const newSavedBy = isSaved
+          ? task.savedBy.filter((uid) => uid !== user.id)
+          : [...task.savedBy, user.id];
+
+        updateTask(id, { savedBy: newSavedBy }).catch(() => {
+          raiseSnack("error", "Error updating task save state");
         });
 
-        // עדכון UI מידי
-        return prev.map((t) => (t.id === id ? { ...t, [field]: newLikes } : t));
-       
+        return prev.map((t) => (t.id === id ? { ...t, savedBy: newSavedBy } : t));
       });
     },
-    [raiseSnack],
+    [raiseSnack, user],
   );
 
   return {
@@ -158,7 +145,7 @@ function useTasks() {
     handleEditTask,
     handleDeleteTask,
     handleGetTasks,
-    updateLikes,
+    toggleSaveTask,
     moveTaskToColumn,
     isLoading,
     error,

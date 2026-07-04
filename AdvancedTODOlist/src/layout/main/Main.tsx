@@ -6,8 +6,8 @@ function Main({ children }: { children: ReactNode }) {
     <Box
       component="main"
       sx={{
-        minHeight: "80vh", // מגדיר גובה עמוד
-        backgroundColor: "#f5f5f5", // צבע רקע
+        minHeight: "80vh", // sets page height
+        backgroundColor: "#f5f5f5", // background color
         padding: 2,
       }}
     >

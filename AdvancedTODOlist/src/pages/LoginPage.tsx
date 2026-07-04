@@ -6,26 +6,25 @@ import { useUser } from "../providers/UserProvider";
 import ROUTES from "../router/routes";
 import { Navigate } from "react-router-dom";
 
-// 1. הגדרת סכימת הולידציה
+// 1. Validation Schema
 const loginSchema = Joi.object({
   email: Joi.string()
-    .email({ tlds: { allow: false } }) // ולידציה לאימייל תקני
+    .email({ tlds: { allow: false } }) // valid email validation
     .required()
     .messages({
-      "string.empty": "אימייל הוא שדה חובה",
-      "string.email": "כתובת האימייל אינה תקינה",
+      "string.empty": "Email is required",
+      "string.email": "Invalid email address",
     }),
   password: Joi.string()
-    .min(6) // מינימום 6 תווים
+    .min(6) // min 6 characters
     .required()
     .messages({
-      "string.empty": "סיסמה היא שדה חובה",
-      "string.min": "הסיסמה חייבת להכיל לפחות 6 תווים",
+      "string.empty": "Password is required",
+      "string.min": "Password must be at least 6 characters",
     }),
 });
 
 function LoginPage() {
-  // 2. חיבור ה-Resolver ל-useForm
   const {
     register,
     handleSubmit,
@@ -36,7 +35,6 @@ function LoginPage() {
   const { login, user } = useUser();
   const onSubmit = async (data: any) => {
     await login(data.email, data.password);
-    console.log("Form Data:", data);
   };
 
   if (user) {
@@ -53,15 +51,13 @@ function LoginPage() {
           mt: 4,
         }}
       >
-        {/* שדה אימייל */}
         <TextField
           {...register("email")}
           placeholder="Email"
-          error={!!errors.email} // צובע באדום אם יש שגיאה
-          helperText={errors.email?.message as string} // מציג את הודעת השגיאה
+          error={!!errors.email}
+          helperText={errors.email?.message as string}
         />
 
-        {/* שדה סיסמה */}
         <TextField
           {...register("password")}
           placeholder="Password"

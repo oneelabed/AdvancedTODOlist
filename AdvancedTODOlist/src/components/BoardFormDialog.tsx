@@ -8,28 +8,28 @@ import {
   Stack,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
-import type { Column } from "../types/Column";
+import type { Board } from "../types/Board";
 
-type ColumnFormValues = Pick<Column, "title">;
+type BoardFormValues = Pick<Board, "title">;
 
-interface ColumnFormDialogProps {
+interface BoardFormDialogProps {
   open: boolean;
   onClose: () => void;
-  initialValues?: Column;
-  handleSave: (data: Column | ColumnFormValues) => void;
+  initialValues?: Board;
+  handleSave: (data: Board | BoardFormValues) => void;
 }
 
-function ColumnFormDialog({
+function BoardFormDialog({
   open,
   onClose,
   initialValues,
   handleSave,
-}: ColumnFormDialogProps) {
-  const { control, handleSubmit, reset } = useForm<ColumnFormValues>({
+}: BoardFormDialogProps) {
+  const { control, handleSubmit, reset } = useForm<BoardFormValues>({
     defaultValues: initialValues ?? { title: "" },
   });
 
-  const onSubmit = (data: ColumnFormValues) => {
+  const onSubmit = (data: BoardFormValues) => {
     if (initialValues) {
       handleSave({ ...initialValues, ...data });
     } else {
@@ -42,7 +42,7 @@ function ColumnFormDialog({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
-        {initialValues ? "Edit Column" : "Add New Column"}
+        {initialValues ? "Edit Board" : "Add New Board"}
       </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent dividers>
@@ -54,7 +54,7 @@ function ColumnFormDialog({
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
-                  label="Column Title"
+                  label="Board Title"
                   fullWidth
                   error={!!error}
                   helperText={error?.message}
@@ -69,7 +69,7 @@ function ColumnFormDialog({
             Cancel
           </Button>
           <Button type="submit" variant="contained" color="primary">
-            {initialValues ? "Save" : "Create Column"}
+            {initialValues ? "Save" : "Create Board"}
           </Button>
         </DialogActions>
       </form>
@@ -77,4 +77,4 @@ function ColumnFormDialog({
   );
 }
 
-export default ColumnFormDialog;
+export default BoardFormDialog;

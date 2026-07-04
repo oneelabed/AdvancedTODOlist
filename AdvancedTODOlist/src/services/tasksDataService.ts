@@ -12,7 +12,7 @@ const getTasks = () => {
     }
   } catch (e) {
     console.log("saved tasks are not valid Json");
-    throw new Error("שגיאה בייבוא הנתונים");
+    throw new Error("Error importing data");
   }
 };
 

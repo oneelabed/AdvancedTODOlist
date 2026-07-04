@@ -4,9 +4,9 @@ import {
   BottomNavigationAction,
   Paper,
 } from "@mui/material";
-import RestoreIcon from "@mui/icons-material/Restore";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import HomeIcon from '@mui/icons-material/Home';
+import EmailIcon from '@mui/icons-material/Email';
+import InfoIcon from '@mui/icons-material/Info';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ROUTES from "../../router/routes";
@@ -29,25 +29,22 @@ function Footer() {
         >
           <BottomNavigationAction
             label="Home"
-            icon={<RestoreIcon />}
+            icon={<HomeIcon />}
             onClick={() => {
-              console.log("Home clicked");
               navigate(ROUTES.HOME);
             }}
           />
           <BottomNavigationAction
             label="Contact"
-            icon={<FavoriteIcon />}
+            icon={<EmailIcon />}
             onClick={() => {
-              console.log("contact clicked");
               navigate(ROUTES.CONTACT);
             }}
           />
           <BottomNavigationAction
             label="About"
-            icon={<LocationOnIcon />}
+            icon={<InfoIcon />}
             onClick={() => {
-              console.log("about clicked");
               navigate(ROUTES.ABOUT);
             }}
           />

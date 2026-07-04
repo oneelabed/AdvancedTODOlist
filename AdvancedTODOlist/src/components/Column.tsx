@@ -1,11 +1,13 @@
-import { Box, IconButton, Paper, Typography } from "@mui/material";
+import { Box, IconButton, Paper, Typography, Button } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
+import AddIcon from "@mui/icons-material/Add";
 import { useDroppable } from "@dnd-kit/react";
-import { memo } from "react";
+import { memo, useState } from "react";
 import type { Column as ColumnType } from "../types/Column";
 import type { Task } from "../types/Task";
 import DraggableTaskCard from "./DraggableTaskCard";
+import TaskFormDialog from "./TaskFormDialog";
 
 interface ColumnProps {
   column: ColumnType;
@@ -15,7 +17,8 @@ interface ColumnProps {
   onDeleteColumn: (id: string) => void;
   handleEditTask: (data: Task) => void;
   handleDeleteTask: (id: string) => void;
-  updateLikes: (id: string, action: "inc" | "dec") => void;
+  toggleSaveTask: (id: string) => void;
+  handleAddNewTask: (task: Omit<Task, "id" | "savedBy">) => void;
 }
 
 function Column({
@@ -26,8 +29,10 @@ function Column({
   onDeleteColumn,
   handleEditTask,
   handleDeleteTask,
-  updateLikes,
+  toggleSaveTask,
+  handleAddNewTask,
 }: ColumnProps) {
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const { ref, isDropTarget } = useDroppable({
     id: column.id,
   });
@@ -56,20 +61,20 @@ function Column({
         }}
       >
         <Typography variant="h6" component="h2" noWrap>
-          {column.name}
+          {column.title}
         </Typography>
         <Box>
           <IconButton
             size="small"
             onClick={() => onEditColumn(column)}
-            aria-label="עריכת עמודה"
+            aria-label="Edit Column"
           >
             <EditIcon fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
             onClick={() => onDeleteColumn(column.id)}
-            aria-label="מחיקת עמודה"
+            aria-label="Delete Column"
           >
             <ClearIcon fontSize="small" sx={{ color: "error.main" }} />
           </IconButton>
@@ -95,7 +100,7 @@ function Column({
               columns={columns}
               handleEditTask={handleEditTask}
               handleDeleteTask={handleDeleteTask}
-              updateLikes={updateLikes}
+              toggleSaveTask={toggleSaveTask}
             />
           ))
         ) : (
@@ -104,10 +109,37 @@ function Column({
             color="text.secondary"
             sx={{ textAlign: "center", py: 4 }}
           >
-            אין משימות בעמודה
+            No tasks in this column
           </Typography>
         )}
       </Box>
+
+      {/* Add Task Button inside Column */}
+      <Button
+        variant="outlined"
+        startIcon={<AddIcon />}
+        onClick={() => setIsTaskDialogOpen(true)}
+        sx={{ m: 1.5, mt: 0 }}
+      >
+        Add Task
+      </Button>
+
+      {isTaskDialogOpen && (
+        <TaskFormDialog
+          open={isTaskDialogOpen}
+          onClose={() => setIsTaskDialogOpen(false)}
+          columns={columns}
+          initialValues={{
+            id: "",
+            title: "",
+            description: "",
+            columnId: column.id,
+            assigneeId: "",
+            savedBy: [],
+          } as any}
+          handleSave={handleAddNewTask}
+        />
+      )}
     </Paper>
   );
 }

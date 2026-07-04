@@ -1,211 +1,143 @@
-import { useEffect, useState, memo, useContext, useMemo } from "react";
+import { useEffect, useState, memo } from "react";
 import {
   Box,
-  Fab,
   Typography,
   Button,
-  Paper,
+  Grid,
+  Card,
+  CardContent,
+  CardActionArea,
+  CircularProgress,
+  Container,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
-import TaskFormDialog from "../components/TaskFormDialog";
-import ColumnFormDialog from "../components/ColumnFormDialog";
-import KanbanBoard from "../components/KanbanBoard";
-import useTasks from "../hooks/useTasks";
-import useColumns from "../hooks/useColumns";
-import { SnackContext } from "../providers/SnackProvider";
-import type { Column } from "../types/Column";
-import CircularProgress from "@mui/material/CircularProgress";
-import { useUser } from "../providers/UserProvider";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import { useNavigate } from "react-router-dom";
+import useBoards from "../hooks/useBoards";
+import BoardFormDialog from "../components/BoardFormDialog";
+import ROUTES from "../router/routes";
+import type { Board } from "../types/Board";
+
 function HomePage() {
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-  const [isColumnDialogOpen, setIsColumnDialogOpen] = useState(false);
-  const [editingColumn, setEditingColumn] = useState<Column | undefined>();
-const {user}=useUser()
-  const { raiseSnack } = useContext(SnackContext) as {
-    raiseSnack: (
-      color: "success" | "error" | "warning" | "info",
-      message: string,
-    ) => void;
-  };
-
-  const {
-    tasks,
-    handleAddNewTask,
-    handleEditTask,
-    handleDeleteTask,
-    handleGetTasks,
-    updateLikes,
-    moveTaskToColumn,
-    isLoading,
-    error,
-  } = useTasks();
-
-  const {
-    columns,
-    handleGetColumns,
-    handleAddColumn,
-    handleEditColumn,
-    handleDeleteColumn,
-  } = useColumns();
-
-  const columnIds = useMemo(
-    () => new Set(columns.map((c) => c.id)),
-    [columns],
-  );
+  const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { boards, isLoading, handleGetBoards, handleAddBoard } = useBoards();
 
   useEffect(() => {
-    handleGetTasks();
-    handleGetColumns();
-  }, [handleGetTasks, handleGetColumns]);
+    handleGetBoards();
+  }, [handleGetBoards]);
 
-  const handleTaskFabClick = () => {
-    if (columns.length === 0) {
-      raiseSnack("warning", "יש ליצור לפחות עמודה אחת לפני הוספת משימה");
-      return;
-    }
-    setIsTaskDialogOpen((prev) => !prev);
+  const handleOpenAddBoard = () => {
+    setIsBoardDialogOpen(true);
   };
 
-  const handleOpenAddColumn = () => {
-    setEditingColumn(undefined);
-    setIsColumnDialogOpen(true);
+  const handleBoardSave = (data: Board | Pick<Board, "title">) => {
+    handleAddBoard(data);
   };
 
-  const handleOpenEditColumn = (column: Column) => {
-    setEditingColumn(column);
-    setIsColumnDialogOpen(true);
-  };
-
-  const handleColumnSave = (data: Column | Pick<Column, "name">) => {
-    if ("id" in data) {
-      handleEditColumn(data);
-    } else {
-      handleAddColumn(data);
-    }
-  };
-
-  const hasColumns = columns.length > 0;
-
-if(error) {
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" color="error">
-        {error}
-      </Typography>
-    </Box>
-  );
-}
-
-if (isLoading) {
-  return (
-    <Box sx={{ p: 3 }}>
-      <CircularProgress />
-    </Box>
-  );
-}
+  if (isLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ p: 3, pb: 10 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Home page
-      </Typography>
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <DashboardIcon color="primary" sx={{ fontSize: 36 }} />
+          <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
+            My Boards
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenAddBoard}
+          size="large"
+          sx={{ borderRadius: 2, px: 3 }}
+        >
+          New Board
+        </Button>
+      </Box>
 
-      {!hasColumns ? (
-        <Box sx={{ textAlign: "center", py: 6 }}>
-          <Typography variant="h6" gutterBottom>
-            אין עמודות — צור עמודה ראשונה כדי להתחיל
+      {boards.length === 0 ? (
+        <Box
+          sx={{
+            textAlign: "center",
+            py: 8,
+            border: 2,
+            borderStyle: "dashed",
+            borderColor: "divider",
+            borderRadius: 3,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No active boards. Create a new board to get started!
           </Typography>
           <Button
-            variant="contained"
-            startIcon={<ViewColumnIcon />}
-            onClick={handleOpenAddColumn}
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddBoard}
             sx={{ mt: 2 }}
           >
-            צור עמודה ראשונה
+            Create First Board
           </Button>
         </Box>
       ) : (
-        <>
-          <KanbanBoard
-            columns={columns}
-            tasks={tasks}
-            columnIds={columnIds}
-            onMoveTask={moveTaskToColumn}
-            onEditColumn={handleOpenEditColumn}
-            onDeleteColumn={handleDeleteColumn}
-            handleEditTask={handleEditTask}
-            handleDeleteTask={handleDeleteTask}
-            updateLikes={updateLikes}
-          />
-
-          <Paper
-            elevation={1}
-            sx={{
-              mt: 2,
-              p: 2,
-              display: "inline-flex",
-              alignItems: "center",
-              cursor: "pointer",
-              border: 1,
-              borderStyle: "dashed",
-              borderColor: "divider",
-            }}
-            onClick={handleOpenAddColumn}
-          >
-            <ViewColumnIcon sx={{ mr: 1 }} color="action" />
-            <Typography color="text.secondary">+ הוסף עמודה</Typography>
-          </Paper>
-        </>
+        <Grid container spacing={3}>
+          {boards.map((board) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={board.id}>
+              <Card
+                sx={{
+                  height: 140,
+                  display: "flex",
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: 4,
+                  },
+                }}
+              >
+                <CardActionArea
+                  onClick={() => navigate(ROUTES.BOARD_PAGE + board.id)}
+                  sx={{ display: "flex", alignItems: "flex-start", p: 3 }}
+                >
+                  <CardContent sx={{ p: 0, width: "100%" }}>
+                    <Typography variant="h6" component="h2" sx={{ fontWeight: "medium" }} noWrap>
+                      {board.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Click to enter task management
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
 
-      <Fab
-        color="secondary"
-        aria-label="add column"
-        onClick={handleOpenAddColumn}
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          right: hasColumns ? 88 : 16,
-        }}
-      >
-        <ViewColumnIcon />
-      </Fab>
-
-      {hasColumns && user&& (
-        <Fab
-          color={isTaskDialogOpen ? "secondary" : "primary"}
-          aria-label="add task"
-          onClick={handleTaskFabClick}
-          sx={{
-            position: "fixed",
-            bottom: 16,
-            right: 16,
-          }}
-        >
-          {isTaskDialogOpen ? <CloseIcon /> : <AddIcon />}
-        </Fab>
-      )}
-
-      {isColumnDialogOpen && (
-        <ColumnFormDialog
-          open={isColumnDialogOpen}
-          onClose={() => setIsColumnDialogOpen(false)}
-          initialValues={editingColumn}
-          handleSave={handleColumnSave}
+      {isBoardDialogOpen && (
+        <BoardFormDialog
+          open={isBoardDialogOpen}
+          onClose={() => setIsBoardDialogOpen(false)}
+          handleSave={handleBoardSave}
         />
       )}
-
-      {isTaskDialogOpen && hasColumns && (
-        <TaskFormDialog
-          open={isTaskDialogOpen}
-          onClose={() => setIsTaskDialogOpen(false)}
-          columns={columns}
-          handleSave={handleAddNewTask}
-        />
-      )}
-    </Box>
+    </Container>
   );
 }
 

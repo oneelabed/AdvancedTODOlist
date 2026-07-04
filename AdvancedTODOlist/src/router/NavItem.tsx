@@ -8,7 +8,7 @@ const navLinkStyle = {
   borderRadius: "8px",
   fontSize: "1rem",
   fontWeight: "500",
-  transition: "all 0.3s ease", // גורם לכל שינוי (צבע, רקע) לקרות בהדרגה
+  transition: "all 0.3s ease", // Causes changes to transition smoothly
   display: "inline-flex",
   alignItems: "center",
   gap: "8px",
